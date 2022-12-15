@@ -23,9 +23,9 @@ float forward_buffer = 3.1f;
 //                                        start with kp,kd=0
 //                                            max pwm = 70/80 ... kp2= 6.5 kd2= 3.5 setpoint= 4 x = +6 y= +2
 
-int optimum_duty_cycle = 56;
-int lower_duty_cycle = 50;  // 50
-int higher_duty_cycle = 60; // 76
+int optimum_duty_cycle = 60;
+int lower_duty_cycle = 54;  // 50
+int higher_duty_cycle = 66; // 76
 float left_duty_cycle = 0, right_duty_cycle = 0;
 const int weights[5] = {3, 1, 0, -1, -3};
 float forward_pwm = 0;
@@ -187,7 +187,7 @@ void self_and_line(void *arg)
 			if (read_mpu6050(euler_angle, mpu_offset) == ESP_OK)
 			{
 				// To read PID setpoint from tuning_http_server
-				pitch_cmd = 5;
+				pitch_cmd = 9;
 				pitch_angle = euler_angle[1];
 				pitch_error = pitch_cmd - pitch_angle;
 
@@ -197,7 +197,7 @@ void self_and_line(void *arg)
 				motor_pwm = bound((motor_cmd), MIN_PWM, MAX_PWM);
 
 				// Bot tilts upwards
-				if (pitch_error > 1)
+				if (pitch_error > 1.2)
 				{
 					// setting motor A0 with definite speed(duty cycle of motor driver PWM) in Backward direction
 					set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, motor_pwm);
@@ -206,7 +206,7 @@ void self_and_line(void *arg)
 				}
 
 				// Bot tilts downwards
-				else if (pitch_error < -1)
+				else if (pitch_error < -1.4)
 				{
 					// setting motor A0 with definite speed(duty cycle of motor driver PWM) in Forward direction
 					set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, motor_pwm);
