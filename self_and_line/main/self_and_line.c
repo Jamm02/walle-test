@@ -22,10 +22,6 @@ float forward_buffer = 3.1f;
 */
 //                                        start with kp,kd=0
 //                                            max pwm = 70/80 ... kp2= 6.5 kd2= 3.5 setpoint= 4 x = +6 y= +2
-
-int optimum_duty_cycle = 60;
-int lower_duty_cycle = 54;  // 50
-int higher_duty_cycle = 66; // 76
 float left_duty_cycle = 0, right_duty_cycle = 0;
 const int weights[5] = {3, 1, 0, -1, -3};
 float forward_pwm = 0;
@@ -187,7 +183,7 @@ void self_and_line(void *arg)
 			if (read_mpu6050(euler_angle, mpu_offset) == ESP_OK)
 			{
 				// To read PID setpoint from tuning_http_server
-				pitch_cmd = 9;
+				pitch_cmd = read_pid_const2().setpoint;
 				pitch_angle = euler_angle[1];
 				pitch_error = pitch_cmd - pitch_angle;
 
@@ -197,7 +193,7 @@ void self_and_line(void *arg)
 				motor_pwm = bound((motor_cmd), MIN_PWM, MAX_PWM);
 
 				// Bot tilts upwards
-				if (pitch_error > 1.2)
+				if (pitch_error > read_pid_const2().pitcherrup)
 				{
 					// setting motor A0 with definite speed(duty cycle of motor driver PWM) in Backward direction
 					set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, motor_pwm);
@@ -206,7 +202,7 @@ void self_and_line(void *arg)
 				}
 
 				// Bot tilts downwards
-				else if (pitch_error < -1.4)
+				else if (pitch_error < -1*read_pid_const2().pitcherrdown)
 				{
 					// setting motor A0 with definite speed(duty cycle of motor driver PWM) in Forward direction
 					set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, motor_pwm);
@@ -220,24 +216,24 @@ void self_and_line(void *arg)
 					line_sensor_readings = read_line_sensor();
                     for(int i = 0; i < 5; i++)
                     {
-                line_sensor_readings.adc_reading[i] = bound(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN);
-            line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
-            line_sensor_readings.adc_reading[i] = 1000 - (line_sensor_readings.adc_reading[i]);
-        }
+                        line_sensor_readings.adc_reading[i] = bound(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN);
+                        line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
+                        line_sensor_readings.adc_reading[i] = 1000 - (line_sensor_readings.adc_reading[i]);
+                    }
         
         calculate_error();
         calculate_correction();
         // lsa_to_bar();
         
-        left_duty_cycle = bound((optimum_duty_cycle - correction), lower_duty_cycle, higher_duty_cycle);
-        right_duty_cycle = bound((optimum_duty_cycle + correction), lower_duty_cycle, higher_duty_cycle);
+        left_duty_cycle = bound((read_pid_const2().optimum_duty_cycle - correction), read_pid_const2().lower_duty_cycle, read_pid_const2().higher_duty_cycle);
+        right_duty_cycle = bound((read_pid_const2().optimum_duty_cycle + correction), read_pid_const2().lower_duty_cycle, read_pid_const2().higher_duty_cycle);
 
         set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, left_duty_cycle);
         set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, right_duty_cycle);
 
         
         // ESP_LOGI("debug","left_duty_cycle:  %f    ::  right_duty_cycle :  %f  :: error :  %f  correction  :  %f  \n",left_duty_cycle, right_duty_cycle, error, correction);
-        // ESP_LOGI("debug", "KP: %f ::  KI: %f  :: KD: %f", read_pid_const().kp, read_pid_const().ki, read_pid_const().kd);
+        ESP_LOGI("debug", "optimum: %d ::  higher: %d  :: lower: %d :: pitcherrup: %f :: pitcherrdown: %f", read_pid_const2().optimum_duty_cycle, read_pid_const2().higher_duty_cycle, read_pid_const2().lower_duty_cycle, read_pid_const2().pitcherrup, read_pid_const2().pitcherrdown);
 // #ifdef CONFIG_ENABLE_OLED
 //         // Diplaying kp, ki, kd values on OLED 
 //         if (read_pid_const().val_changed)

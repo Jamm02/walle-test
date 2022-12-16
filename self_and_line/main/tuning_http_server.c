@@ -3,7 +3,7 @@
 static const char *TAG = "tuning_http_server";
 static char scratch[SCRATCH_BUFSIZE];
 static pid_const_t pid_constants = {.kp = 2, .ki = 0, .kd =8, .val_changed = true}; // 8 0 3.3
-static pid_const2_t pid_constants2 = {.kp2 = 1.5, .ki2 = 0.00, .kd2 = 3, .setpoint =10, .offset = 0.0,.x=0.1,.y=-0.1,.errorf=5,.hlp=67 ,.val_changed = true}; //random values for now.
+static pid_const2_t pid_constants2 = {.kp2 = 1.5, .ki2 = 0.00, .kd2 = 3, .setpoint = 7, .pitcherrup = 1.2, .pitcherrdown = 1.4, .offset = 0.0, .optimum_duty_cycle = 60, .lower_duty_cycle=54, .higher_duty_cycle=66, .val_changed = true}; //random values for now.
 
 static void initialise_mdns(void)
 {

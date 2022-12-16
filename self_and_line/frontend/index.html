@@ -121,7 +121,6 @@
 				<input type="number" value="0.000" id="setpoint" />
 				<button>&gt;</button>
 			</div>
-		]
 			<div class="button-group">
 				<h3>x</h3>
 				<button>&lt;</button>
@@ -146,6 +145,36 @@
 				<input type="number" value="0.000" id="hlp" />
 				<button>&gt;</button>
 			</div>
+			<div class="button-group">
+				<h3>pitcherrup()</h3>
+				<button>&lt;</button>
+				<input type="number" value="0.000" id="pitcherrup" />
+				<button>&gt;</button>
+			</div>
+			<div class="button-group">
+				<h3>pitcherrdown(bot lim for down)</h3>
+				<button>&lt;</button>
+				<input type="number" value="0.000" id="pitcherrdown" />
+				<button>&gt;</button>
+			</div>
+			<div class="button-group">
+				<h3>optimum_duty</h3>
+				<button>&lt;</button>
+				<input type="number" value="0" id="optimum_duty" />
+				<button>&gt;</button>
+			</div>
+			<div class="button-group">
+				<h3>lower_duty</h3>
+				<button>&lt;</button>
+				<input type="number" value="0" id="lower_duty" />
+				<button>&gt;</button>
+			</div>
+			<div class="button-group">
+				<h3>higher_duty</h3>
+				<button>&lt;</button>
+				<input type="number" value="0" id="higher_duty" />
+				<button>&gt;</button>
+			</div>
 		</main>
 		<script>
 			let inpArray = document.querySelectorAll("input[type='number']");
@@ -162,6 +191,13 @@
 				data["y"] = parseFloat(document.getElementById("y").value);
 				data["errorf"] = parseFloat(document.getElementById("errof").value);
 				data["hlp"] = parseFloat(document.getElementById("hlp").value);
+				data["pitcherrup"] = parseFloat(document.getElementById("pitcherrup").value);
+				data["pitcherrdown"] = parseFloat(document.getElementById("pitcherrdown").value);
+				data["optimum_duty"] = parseFloat(document.getElementById("optimum_duty").value);
+				data["higher_duty"] = parseFloat(document.getElementById("higher_duty").value);
+				data["lower_duty"] = parseFloat(document.getElementById("lower_duty").value);
+
+				
 			
 				let finaldata = JSON.stringify(data);
 				console.log(finaldata);
