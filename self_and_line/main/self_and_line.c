@@ -283,7 +283,7 @@ void self_and_line(void *arg)
                 set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
             }
 
-            if (euler_angle[1] > 3 || euler_angle[1] < -2.5){
+            if (euler_angle[1] > 2 || euler_angle[1] < -1.0){
                 pitch_cmd = read_pid_const2().setpoint;
                 balanced = false;
             }
