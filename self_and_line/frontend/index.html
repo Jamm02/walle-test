@@ -4,7 +4,7 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Tuning page</title>
-		<style>
+		<!-- <style>
 			* {
 				margin: 0;
 				padding: 0;
@@ -73,12 +73,12 @@
 				cursor: pointer;
 				font-size: 2rem;
 			}
-		</style>
+		</style> -->
 	</head>
 	<body>
 		<main>
 			<h1>Line Following and Self Balancing</h1>
-			<!-- <div class="button-group">
+			<div class="button-group">
 				<h3>Kp</h3>
 				<button>&lt;</button>
 				<input type="number" value="0.000" id="kp" />
@@ -95,7 +95,7 @@
 				<button>&lt;</button>
 				<input type="number" value="0.000" id="kd" />
 				<button>&gt;</button>
-			</div> -->
+			</div>
 
 			<div class="button-group">
 				<h3>Kp2</h3>
@@ -187,17 +187,11 @@
 				data["ki2"] = parseFloat(document.getElementById("ki2").value);
 				data["kd2"] = parseFloat(document.getElementById("kd2").value);
 				data["setpoint"] = parseFloat(document.getElementById("setpoint").value);
-				data["x"] = parseFloat(document.getElementById("x").value);
-				data["y"] = parseFloat(document.getElementById("y").value);
-				data["errorf"] = parseFloat(document.getElementById("errof").value);
-				data["hlp"] = parseFloat(document.getElementById("hlp").value);
 				data["pitcherrup"] = parseFloat(document.getElementById("pitcherrup").value);
 				data["pitcherrdown"] = parseFloat(document.getElementById("pitcherrdown").value);
 				data["optimum_duty"] = parseFloat(document.getElementById("optimum_duty").value);
 				data["higher_duty"] = parseFloat(document.getElementById("higher_duty").value);
 				data["lower_duty"] = parseFloat(document.getElementById("lower_duty").value);
-
-				
 			
 				let finaldata = JSON.stringify(data);
 				console.log(finaldata);

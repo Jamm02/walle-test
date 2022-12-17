@@ -3,7 +3,7 @@
 static const char *TAG = "tuning_http_server";
 static char scratch[SCRATCH_BUFSIZE];
 static pid_const_t pid_constants = {.kp = 2, .ki = 0, .kd =8, .val_changed = true}; // 8 0 3.3
-static pid_const2_t pid_constants2 = {.kp2 = 1.5, .ki2 = 0.00, .kd2 = 3, .setpoint = 7, .pitcherrup = 1.2, .pitcherrdown = 1.4, .offset = 0.0, .optimum_duty_cycle = 60, .lower_duty_cycle=54, .higher_duty_cycle=66, .val_changed = true}; //random values for now.
+static pid_const2_t pid_constants2 = {.kp2 = 5, .ki2 = 0.00, .kd2 = 5, .setpoint = 7, .pitcherrup = 1.0, .pitcherrdown = 1.0, .offset = 0.0, .optimum_duty_cycle = 65, .lower_duty_cycle=60, .higher_duty_cycle=80, .val_changed = true}; //random values for now.
 
 static void initialise_mdns(void)
 {
@@ -155,7 +155,7 @@ static esp_err_t tuning_pid_post_handler(httpd_req_t *req)
         return ESP_FAIL;
     }
     
-    if (!cJSON_HasObjectItem(root, "kp") || !cJSON_HasObjectItem(root, "ki") || !cJSON_HasObjectItem(root, "kd") || !cJSON_HasObjectItem(root, "kp2") || !cJSON_HasObjectItem(root, "ki2") || !cJSON_HasObjectItem(root, "kd2") )
+    if (!cJSON_HasObjectItem(root, "kp2") || !cJSON_HasObjectItem(root, "ki2") || !cJSON_HasObjectItem(root, "kd2") || !cJSON_HasObjectItem(root, "setpoint"))
     {
         ESP_LOGE(TAG, "invalid json response");
         return ESP_FAIL;
@@ -169,10 +169,11 @@ static esp_err_t tuning_pid_post_handler(httpd_req_t *req)
     pid_constants2.ki2 = (float)cJSON_GetObjectItem(root, "ki2")->valuedouble;
     pid_constants2.kd2 = (float)cJSON_GetObjectItem(root, "kd2")->valuedouble;
     pid_constants2.setpoint = (float)cJSON_GetObjectItem(root, "setpoint")->valuedouble;
-    pid_constants2.x = (float)cJSON_GetObjectItem(root, "x")->valuedouble;
-    pid_constants2.y= (float)cJSON_GetObjectItem(root, "y")->valuedouble;
-      pid_constants2.errorf = (float)cJSON_GetObjectItem(root, "errorf")->valuedouble;
-    pid_constants2.hlp= (float)cJSON_GetObjectItem(root, "hlp")->valuedouble;
+    pid_constants2.pitcherrup = (float)cJSON_GetObjectItem(root, "pitcherrup")->valuedouble;
+    pid_constants2.pitcherrdown= (float)cJSON_GetObjectItem(root, "pitcherrdown")->valuedouble;
+    pid_constants2.optimum_duty_cycle = (float)cJSON_GetObjectItem(root, "optimum_duty")->valuedouble;
+    pid_constants2.higher_duty_cycle= (float)cJSON_GetObjectItem(root, "higher_duty")->valuedouble;
+    pid_constants2.lower_duty_cycle= (float)cJSON_GetObjectItem(root, "lower_duty")->valuedouble;
 
 
     cJSON_Delete(root);
