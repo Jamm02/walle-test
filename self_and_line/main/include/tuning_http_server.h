@@ -42,9 +42,9 @@ typedef struct pid_const2
     float ki2;
     float kd2;
     float setpoint;
-    float offset;
     float pitcherrup;
     float pitcherrdown;
+    float percent_lf;
     int optimum_duty_cycle;
     int lower_duty_cycle;
     int higher_duty_cycle;

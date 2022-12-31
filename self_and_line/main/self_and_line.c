@@ -22,9 +22,9 @@ float forward_buffer = 3.1f;
 */
 
 float left_duty_cycle = 0, right_duty_cycle = 0;
-const int weights[5] = {3, 1, 0, -1, -3};
+const int weights[5] = {-3, -1, 0, 1, 3};
 bool balanced = false;
-float fwd_offset = 0.5;
+float fwd_offset = 1;
 float forward_angle = 0;
 float error = 0, prev_error = 0, difference, cumulative_error, correction;
 line_sensor_array line_sensor_readings;
@@ -44,6 +44,7 @@ mixpart motorpwm+correction
 not that great cuz when good balance then it enters mixedpart where motorpwm is very less
 */
 
+void LF();
 void lsa_to_bar()
 {
     uint8_t var = 0x00;
@@ -151,12 +152,6 @@ void calculate_motor_command(const float pitch_error, float *motor_cmd)
 	prev_pitch_error = pitch_error;
 }
 
-void self_and_line(void *arg)
-{
-    /**
-     * euler_angles are the complementary pitch and roll angles obtained from mpu6050
-     * mpu_offsets are the initial accelerometer angles at rest position
-     */
     float euler_angle[2], mpu_offset[2] = {0.0f, 0.0f};
 
     float pitch_angle = 0, pitch_error = 0;
@@ -167,9 +162,16 @@ void self_and_line(void *arg)
                       giving actual correction velocity to the motors
     */
     float motor_cmd, motor_pwm = 0.0f;
+    /**
+     * euler_angles are the complementary pitch and roll angles obtained from mpu6050
+     * mpu_offsets are the initial accelerometer angles at rest position
+     */
 
     // Pitch angle where you want to go - pitch_cmd, setpoint and mpu_offsets are linked to one another
     float pitch_cmd = 0.0f;
+
+void self_and_line(void *arg)
+{
 
     // Ensure successful initialisation of MPU-6050
     enable_mpu6050();
@@ -181,9 +183,13 @@ void self_and_line(void *arg)
 
     while (1){
         //  ESP_LOGI("debug", "optimum: %d ::  higher: %d  :: lower: %d :: setpoint: %f", read_pid_const2().optimum_duty_cycle, read_pid_const2().higher_duty_cycle, read_pid_const2().lower_duty_cycle, read_pid_const2().setpoint);
+      
+        // ESP_LOGI("debug", "LSA_1: %d \t LSA_2: %d \t LSA_3: %d \t LSA_4: %d \t LSA_5: %d", line_sensor_readings.adc_reading[0], line_sensor_readings.adc_reading[1], line_sensor_readings.adc_reading[2], line_sensor_readings.adc_reading[3], line_sensor_readings.adc_reading[4]);
 
+                   
         read_mpu6050(euler_angle, mpu_offset);
         calculate_error();
+        // printf("%f \n", error);g
         calculate_correction();
         calculate_motor_command(pitch_error, &motor_cmd);
         motor_pwm = bound((motor_cmd), MIN_PWM, MAX_PWM);
@@ -193,6 +199,7 @@ void self_and_line(void *arg)
              *											and roll angles based on intial accelerometer angle
              */
             // Ensure required values are obtained from mpu6050
+            // ESP_LOGI("debug","error %f :: correction %f\n", error, correction);
         if (!balanced)
         {
             // ESP_LOGI("debug", "bal? : %s :: ", "no");
@@ -201,27 +208,65 @@ void self_and_line(void *arg)
             pitch_cmd = read_pid_const2().setpoint;
             pitch_angle = euler_angle[1];
             pitch_error = pitch_cmd - pitch_angle;
-            
+            // printf("%f \n",pitch_error);
             // Bot tilts upwards
             if (pitch_error > read_pid_const2().pitcherrup)
             {
+                // ESP_LOGI("debug", "%f \n", correction);
+                 if (error < -1*read_pid_const2().percent_lf || error > read_pid_const2().percent_lf){
+                    // ESP_LOGI("debug","error %f :: correction %f :: pitcherr %f\n", error, correction, read_pid_const2().pitcherrup);
+
+                    // setting motor A0 with definite speed(duty cycle of motor driver PWM) in Backward direction
+                    set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, (motor_pwm - bound(correction, -5, 5)));
+                    // setting motor A1 with definite speed(duty cycle of motor driver PWM) in Backward direction
+                    set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, (motor_pwm + bound(correction, -5, 5)));
+                     if((motor_pwm - bound(correction, -5, 5)) > (motor_pwm + bound(correction, -5, 5))){
+                        ESP_LOGI("debug","going left from 1");
+                    }
+                    else{
+                        ESP_LOGI("debug","going right from 1");
+                        
+                    }
+                }
+                
                 // setting motor A0 with definite speed(duty cycle of motor driver PWM) in Backward direction
+                else{
+
                 set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, motor_pwm);
                 // setting motor A1 with definite speed(duty cycle of motor driver PWM) in Backward direction
                 set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, motor_pwm);
+                }
+
             }
 
             // Bot tilts downwards
             else if (pitch_error < -1 * read_pid_const2().pitcherrdown)
             {
+                if (error < -1*read_pid_const2().percent_lf || error > read_pid_const2().percent_lf){
+                    // ESP_LOGI("debug","error %f :: correction %f :: pitcherr %f\n", error, correction, read_pid_const2().pitcherrdown);
+                    // setting motor A0 with definite speed(duty cycle of motor driver PWM) in Backward direction
+                    set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, (motor_pwm - bound(correction, -5, 5)));
+                    // setting motor A1 with definite speed(duty cycle of motor driver PWM) in Backward direction
+                    set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, (motor_pwm + bound(correction, -5, 5)));
+                    // if((motor_pwm - bound(correction, -5, 5)) > (motor_pwm + bound(correction, -5, 5))){
+                    //     ESP_LOGI("debug","going right from 2");
+                    // }
+                    // else{
+                    //     ESP_LOGI("debug","going left from 2");
+
+                    // }
+                }
+                else{
                 // setting motor A0 with definite speed(duty cycle of motor driver PWM) in Forward direction
                 set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, motor_pwm);
                 // setting motor A1 with definite speed(duty cycle of motor driver PWM) in Forward direction
                 set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, motor_pwm);
+                }
             }
             else
             {
                 set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
+                // setting motor A1 with definite speed(duty cycle of motor driver PWM) in Forward direction
                 set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
                 pitch_cmd = forward_angle;
                 balanced = true;
@@ -230,10 +275,23 @@ void self_and_line(void *arg)
         // Bot remains in desired region for vertical balance
         else
         {
+            
+           LF();
+
+            // vTaskDelay(5 / portTICK_PERIOD_MS);
+        }
+    }
+
+}
+
+void LF(){
+
+            // ESP_LOGI("debug", "LF\n");
             forward_angle = read_pid_const2().setpoint + fwd_offset;
 
             line_sensor_readings = read_line_sensor();
-            for (int i = 0; i < 5; i++){
+            for(int i = 0; i < 5; i++)
+            {
                 line_sensor_readings.adc_reading[i] = bound(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN);
                 line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
                 line_sensor_readings.adc_reading[i] = 1000 - (line_sensor_readings.adc_reading[i]);
@@ -245,56 +303,56 @@ void self_and_line(void *arg)
             right_duty_cycle = bound((read_pid_const2().optimum_duty_cycle + correction), read_pid_const2().lower_duty_cycle, read_pid_const2().higher_duty_cycle);
 
             //Extra yaw correction during turns
-            ESP_LOGI("debug", "error %f", error);
+            // ESP_LOGI("debug", "error %f", error);
 
-            if(error>4.5)
-            {
-                printf("hello1");
-                right_duty_cycle+=15;
-                left_duty_cycle-=15;   
-            }
-            else if(error<-3.5)
-            {
-                printf("hello2");
+            // if(error>2.5)
+            // {
+            //     ESP_LOGI("debug","error > 2.5 %f\n", error);
 
-                left_duty_cycle+=15;
-                right_duty_cycle-=15;
-            }
+            //     right_duty_cycle+=6;
+            //     left_duty_cycle-=6;   
+            // }
+            // else if(error<-4.5)
+            // {
+            //     // printf("hello2\n");
+            //     ESP_LOGI("debug","error < -4.5 %f\n", error);
+
+            //     left_duty_cycle+=6;
+            //     right_duty_cycle-=6;
+            // }
 
 
             // calculate_motor_command(pitch_error, &motor_cmd);
 
             read_mpu6050(euler_angle, mpu_offset);
+            pitch_cmd = read_pid_const2().setpoint;
+            pitch_angle = euler_angle[1];
+            pitch_error = pitch_cmd - pitch_angle;
             // ESP_LOGI("debug", "pitchang : %0.2f ", euler_angle[1]);
 
-            if (pitch_error > 0)
-            {
-                set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, left_duty_cycle);
-                set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, right_duty_cycle);
-            }
-            else if (pitch_error < 0)
-            {
-                set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, left_duty_cycle);
-                set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, right_duty_cycle);
-            }
-            else
-            {
-                set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
-                set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
-            }
+            // if (pitch_error > 0)
+            // {
+            //     set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, left_duty_cycle);
+            //     set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, right_duty_cycle);
+            // }
+            // if (pitch_error < 0)
+            // {
+            //     set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, left_duty_cycle);
+            //     set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, right_duty_cycle);
+            // }
+            // else
+            // {
+            //     set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
+            //     set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
+            // }
 
-            if (euler_angle[1] > 2 || euler_angle[1] < -1.0){
+            if (pitch_error > read_pid_const2().pitcherrup || pitch_error < -read_pid_const2().pitcherrdown){
                 pitch_cmd = read_pid_const2().setpoint;
                 balanced = false;
             }
-        
-                // ESP_LOGI("debug","left_duty_cycle:  %f    ::  right_duty_cycle :  %f  :: error :  %f  correction  :  %f  \n",left_duty_cycle, right_duty_cycle, error, correction);
-           
 
-        }
-            // vTaskDelay(5 / portTICK_PERIOD_MS);
-    }
-
+            // ESP_LOGI("debug", "kp:  %f    ::  kp2 :  %f  :: setpoint :  %f  optimumduty  :  %d  \n",read_pid_const().kp, read_pid_const2().kp2, read_pid_const2().setpoint, read_pid_const2().optimum_duty_cycle);
+            // ESP_LOGI("debug","left_duty_cycle:  %f    ::  right_duty_cycle :  %f  :: error :  %f  correction  :  %f  \n",left_duty_cycle, right_duty_cycle, error, correction);
 }
 
 void app_main()
