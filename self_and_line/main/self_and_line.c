@@ -234,7 +234,7 @@ void SB(){
 }
 
 void LF(){
-    // ESP_LOGI("debug", "LF\n");
+    ESP_LOGI("debug", "LF\n");
     forward_angle = read_pid_const2().setpoint + fwd_offset;
 
     left_duty_cycle = bound((read_pid_const2().optimum_duty_cycle - correction), read_pid_const2().lower_duty_cycle, read_pid_const2().higher_duty_cycle);
@@ -281,7 +281,7 @@ void calc_all(){
             line_sensor_readings.adc_reading[i] = 1000 - (line_sensor_readings.adc_reading[i]);
         }
 
-        ESP_LOGI("debug", "LSA_1: %d \t LSA_2: %d \t LSA_3: %d \t LSA_4: %d \t LSA_5: %d", line_sensor_readings.adc_reading[0], line_sensor_readings.adc_reading[1], line_sensor_readings.adc_reading[2], line_sensor_readings.adc_reading[3], line_sensor_readings.adc_reading[4]);
+        // ESP_LOGI("debug", "LSA_1: %d \t LSA_2: %d \t LSA_3: %d \t LSA_4: %d \t LSA_5: %d", line_sensor_readings.adc_reading[0], line_sensor_readings.adc_reading[1], line_sensor_readings.adc_reading[2], line_sensor_readings.adc_reading[3], line_sensor_readings.adc_reading[4]);
 
                    
         read_mpu6050(euler_angle, mpu_offset);
@@ -293,7 +293,7 @@ void calc_all(){
         pitch_cmd = read_pid_const2().setpoint;
         pitch_angle = euler_angle[1];
         pitch_error = pitch_cmd - pitch_angle;
-        vTaskDelay(5 / portTICK_PERIOD_MS);
+        // vTaskDelay(5 / portTICK_PERIOD_MS);
     }
    
 }
@@ -301,6 +301,26 @@ void calc_all(){
 void self_and_line(void *arg)
 {
     while (1){
+        line_sensor_readings = read_line_sensor();
+        for(int i = 0; i < 5; i++)
+        {
+            line_sensor_readings.adc_reading[i] = bound(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN);
+            line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
+            line_sensor_readings.adc_reading[i] = 1000 - (line_sensor_readings.adc_reading[i]);
+        }
+
+        // ESP_LOGI("debug", "LSA_1: %d \t LSA_2: %d \t LSA_3: %d \t LSA_4: %d \t LSA_5: %d", line_sensor_readings.adc_reading[0], line_sensor_readings.adc_reading[1], line_sensor_readings.adc_reading[2], line_sensor_readings.adc_reading[3], line_sensor_readings.adc_reading[4]);
+
+                   
+        read_mpu6050(euler_angle, mpu_offset);
+        calculate_error();
+        // printf("%f \n", error);g
+        calculate_correction();
+        calculate_motor_command(pitch_error, &motor_cmd);
+        motor_pwm = bound((motor_cmd), MIN_PWM, MAX_PWM);
+        pitch_cmd = read_pid_const2().setpoint;
+        pitch_angle = euler_angle[1];
+        pitch_error = pitch_cmd - pitch_angle;
         //  ESP_LOGI("debug", "optimum: %d ::  higher: %d  :: lower: %d :: setpoint: %f", read_pid_const2().optimum_duty_cycle, read_pid_const2().higher_duty_cycle, read_pid_const2().lower_duty_cycle, read_pid_const2().setpoint)
 
         // ESP_LOGI("debug", "error %f\n", error);
@@ -312,7 +332,7 @@ void self_and_line(void *arg)
         {
            LF();
         }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        // vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 
 }
@@ -323,8 +343,8 @@ void app_main()
     enable_motor_driver(a, NORMAL_MODE);
     enable_line_sensor();
 
-    xTaskCreatePinnedToCore(&self_and_line, "self_and_line", 8192, NULL, tskIDLE_PRIORITY, NULL, 1);
-    xTaskCreatePinnedToCore(&calc_all, "calculations", 8192, NULL, tskIDLE_PRIORITY, NULL, 0);
+    xTaskCreate(&self_and_line, "self_and_line", 8192, NULL, 3, NULL);
+    // xTaskCreate(&calc_all, "calculations", 8192, NULL, tskIDLE_PRIORITY, NULL);
 
 
     // xTaskCreate(&self_and_line, "self_and_line", 4096, NULL, 1, NULL);
