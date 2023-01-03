@@ -24,7 +24,7 @@ float forward_buffer = 3.1f;
 float left_duty_cycle = 0, right_duty_cycle = 0;
 const int weights[5] = {-3, -1, 0, 1, 3};
 bool balanced = false;
-float fwd_offset = 1;
+float fwd_offset = 2.5;
 float forward_angle = 0;
 float error = 0, prev_error = 0, difference, cumulative_error, correction;
 line_sensor_array line_sensor_readings;
@@ -220,7 +220,8 @@ void self_and_line(void *arg)
                     set_motor_speed(MOTOR_A_0, MOTOR_BACKWARD, (motor_pwm - bound(correction, -6, 6)));
                     // setting motor A1 with definite speed(duty cycle of motor driver PWM) in Backward direction
                     set_motor_speed(MOTOR_A_1, MOTOR_BACKWARD, (motor_pwm + bound(correction, -6, 6)));
-                    //  if((motor_pwm - bound(correction, -5, 5)) > (motor_pwm + bound(correction, -5, 5))){
+                    
+                    // if((motor_pwm - bound(correction, -5, 5)) > (motor_pwm + bound(correction, -5, 5))){
                     //     ESP_LOGI("debug","going left from 1");
                     // }
                     // else{
@@ -286,7 +287,7 @@ void self_and_line(void *arg)
 
 void LF(){
 
-            // ESP_LOGI("debug", "LF\n");
+            ESP_LOGI("debug", "LF\n");
             forward_angle = read_pid_const2().setpoint + fwd_offset;
 
             line_sensor_readings = read_line_sensor();
@@ -296,30 +297,32 @@ void LF(){
                 line_sensor_readings.adc_reading[i] = map(line_sensor_readings.adc_reading[i], WHITE_MARGIN, BLACK_MARGIN, bound_LSA_LOW, bound_LSA_HIGH);
                 line_sensor_readings.adc_reading[i] = 1000 - (line_sensor_readings.adc_reading[i]);
             }
-
+            
             // lsa_to_bar();
 
             left_duty_cycle = bound((read_pid_const2().optimum_duty_cycle - correction), read_pid_const2().lower_duty_cycle, read_pid_const2().higher_duty_cycle);
             right_duty_cycle = bound((read_pid_const2().optimum_duty_cycle + correction), read_pid_const2().lower_duty_cycle, read_pid_const2().higher_duty_cycle);
 
+
+
             //Extra yaw correction during turns
             // ESP_LOGI("debug", "error %f", error);
 
-            // if(error>2.5)
-            // {
-            //     ESP_LOGI("debug","error > 2.5 %f\n", error);
+            if(error>read_pid_const2().percent_lf)
+            {
+                ESP_LOGI("debug","error > 2.5 %f\n", error);
 
-            //     right_duty_cycle+=6;
-            //     left_duty_cycle-=6;   
-            // }
-            // else if(error<-4.5)
-            // {
-            //     // printf("hello2\n");
-            //     ESP_LOGI("debug","error < -4.5 %f\n", error);
+                right_duty_cycle-=6;
+                left_duty_cycle+=6;   
+            }
+            else if(error<-read_pid_const2().percent_lf)
+            {
+                // printf("hello2\n");
+                ESP_LOGI("debug","error < -4.5 %f\n", error);
 
-            //     left_duty_cycle+=6;
-            //     right_duty_cycle-=6;
-            // }
+                left_duty_cycle-=6;
+                right_duty_cycle+=6;
+            }
 
             if(line_sensor_readings.adc_reading[0]>600 && line_sensor_readings.adc_reading[4]<450){
                 right_duty_cycle+=6;
@@ -330,6 +333,8 @@ void LF(){
                 left_duty_cycle+=6;
             }
 
+            set_motor_speed(MOTOR_A_0, MOTOR_FORWARD, left_duty_cycle);
+            set_motor_speed(MOTOR_A_1, MOTOR_FORWARD, right_duty_cycle);
 
             // calculate_motor_command(pitch_error, &motor_cmd);
 
