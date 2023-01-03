@@ -48,6 +48,8 @@ typedef struct pid_const2
     int optimum_duty_cycle;
     int lower_duty_cycle;
     int higher_duty_cycle;
+    float breakposi;
+    float breakneg;
 
     float x;
     float y;

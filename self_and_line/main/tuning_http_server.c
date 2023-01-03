@@ -3,7 +3,7 @@
 static const char *TAG = "tuning_http_server";
 static char scratch[SCRATCH_BUFSIZE];
 static pid_const_t pid_constants = {.kp = 2, .ki = 0, .kd =8, .val_changed = true}; // 8 0 3.3
-static pid_const2_t pid_constants2 = {.kp2 = 5, .ki2 = 0.00, .kd2 = 5, .setpoint = 3, .pitcherrup = 1.0, .pitcherrdown = 1.0, .optimum_duty_cycle = 85, .lower_duty_cycle=70, .higher_duty_cycle=100, .percent_lf = 0.2,.val_changed = true}; //random values for now.
+static pid_const2_t pid_constants2 = {.kp2 = 5, .ki2 = 0.00, .kd2 = 5, .setpoint = 3, .pitcherrup = 1.0, .pitcherrdown = 1.0, .optimum_duty_cycle = 85, .lower_duty_cycle=70, .higher_duty_cycle=100, .percent_lf = 0.2, .breakposi = 1, .breakneg = 1 ,.val_changed = true}; //random values for now.
 
 static void initialise_mdns(void)
 {
@@ -175,7 +175,9 @@ static esp_err_t tuning_pid_post_handler(httpd_req_t *req)
     pid_constants2.higher_duty_cycle= (float)cJSON_GetObjectItem(root, "higher_duty")->valuedouble;
     pid_constants2.lower_duty_cycle= (float)cJSON_GetObjectItem(root, "lower_duty")->valuedouble;
     pid_constants2.percent_lf= (float)cJSON_GetObjectItem(root, "percent_lf")->valuedouble;
-
+    pid_constants2.breakposi= (float)cJSON_GetObjectItem(root, "breakposi")->valuedouble;
+    pid_constants2.breakneg= (float)cJSON_GetObjectItem(root, "breakneg")->valuedouble;
+    
     cJSON_Delete(root);
     httpd_resp_sendstr(req, "Post control value successfully");
 
